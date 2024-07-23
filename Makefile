@@ -8,7 +8,8 @@ D_INC		:= Core/Inc#separated by space
 D_OUT		:= Debug
 
 OBJECTS		:= $(patsubst $(D_SRC)/%.c,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.c)) \
-		   $(patsubst $(D_SRC)/%.s,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.s))
+		   $(patsubst $(D_SRC)/%.s,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.s)) \
+		   $(patsubst $(D_SRC)/%.S,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.S))
 
 TARGET		:= $(D_OUT)/$(notdir $(basename $(CURDIR))).elf
 GCC		:= arm-none-eabi-gcc -std=gnu11 -mcpu=cortex-m0 -mthumb -Wall -Wextra# --specs=nano.specs -mfloat-abi=soft -ffunction-sections -fdata-sections -MMD
@@ -33,7 +34,7 @@ $(D_OUT)/%.o: $(D_SRC)/%.s Makefile | $(D_OUT)
 $(D_OUT)/%.o: $(D_SRC)/%.S Makefile | $(D_OUT)
 	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as \n($<)"
 	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
-	-sed -i 's/\/tmp\/.*.S//' $(D_OUT)/$*.D
+	-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
 
 $(D_OUT)/%.o: $(D_SRC)/%.c Makefile | $(D_OUT)
 	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = cc \n($<)"
