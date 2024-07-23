@@ -12,7 +12,7 @@ OBJECTS		:= $(patsubst $(D_SRC)/%.c,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.c)) \
 
 TARGET		:= $(D_OUT)/$(notdir $(basename $(CURDIR))).elf
 GCC		:= arm-none-eabi-gcc -std=gnu11 -mcpu=cortex-m0 -mthumb -Wall -Wextra# --specs=nano.specs -mfloat-abi=soft -ffunction-sections -fdata-sections -MMD
-CC 		:= $(GCC) $(addprefix -I,$(D_INC)) -c#$(addprefix -D,$(DEF))
+CC 		:= $(GCC) $(addprefix -I,$(D_INC)) -c#$(addprefix -D,$(DEF)) -MMD
 CC 		+= -g#debug
 AS 		:= $(CC) -x assembler-with-cpp
 LDSCRIPT	:= $(wildcard $(D_SRC)/*.ld)
@@ -28,12 +28,18 @@ $(TARGET): $(OBJECTS) | $(D_OUT) Makefile $(LDSCRIPT)
 $(D_OUT)/%.o: $(D_SRC)/%.s Makefile | $(D_OUT)
 	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as \n($<)"
 	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
+	-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
+
+$(D_OUT)/%.o: $(D_SRC)/%.S Makefile | $(D_OUT)
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as \n($<)"
+	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
+	-sed -i 's/\/tmp\/.*.S//' $(D_OUT)/$*.D
 
 $(D_OUT)/%.o: $(D_SRC)/%.c Makefile | $(D_OUT)
 	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = cc \n($<)"
 	@$(CC) -o $@ $<
 
-#-include $(wildcard $(D_OUT)/*.D) - для as не раб. - лемит чушь из as-компил-теки "tmp"
+-include $(wildcard $(D_OUT)/*.D)#лепит чушь из as-компил-теки "tmp", исправляем sed-ами
 
 $(D_OUT):
 	@mkdir -p $@
