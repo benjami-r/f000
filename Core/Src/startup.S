@@ -18,6 +18,8 @@ Reset_Handler:
  	mov   r0, r0
 	nop
 	nop
+
+DoGPIOA_On:					@ Включаем тактирование устройства GPIOA:
 	.MyOutDef _RCC_BASE, RCC_BASE
 	ldr r0, =(RCC_BASE + 0x14)		@ адрес AHBENR: RCC (0x40021000) + смещ. 0x14
 	ldr r1, [r0]					@ загружаем текущее значение AHBENR
@@ -25,7 +27,7 @@ Reset_Handler:
 	ldr r2, =(RCC_AHBENR_GPIOAEN)	@ маска бита включения GPIOAEN  (0x1UL << 17U)
 	orrs r1, r2						@ накладываем маску на текущее значение AHBENR
 	str r1, [r0]					@ сохраняем новое значение AHBENR (GPIOA тактирован)
-	
+DoPA5_Output_mode:
 	.MyOutDef _GPIOA_BASE, GPIOA_BASE
 	ldr r0, =(GPIOA_BASE + 0x00)	@ адрес MODER: GPIOA (0x48000000) + смещ. 0x00
 	ldr r1, [r0]					@ загружаем текущее значение MODER
@@ -36,7 +38,8 @@ Reset_Handler:
 	orrs r1, r2						@ накладываем маску на текущее значение MODER
 	str r1, [r0]					@ сохраняем новое значение MODER (PA5 в General purpose output mode)
 									@ остальные конфигурационные трогать для наших целей вродь не надо
-
+DoPA5_setOn:
+	.MyOutDef _GPIO_BSRR_BS_5, GPIO_BSRR_BS_5
 	ldr r0, =(GPIOA_BASE + 0x18)	@ адрес BSRR: GPIOA (0x48000000) + смещ. 0x18
 	ldr r1, =(GPIO_BSRR_BS_5)		@ маска BS_5 (1 для 5-го пина -  5й бит, =0x20)
 	ldr r2, =(GPIO_BSRR_BR_5)		@ маска BR_5 (1 для 5-го пина - 21й бит, =0x200000)
