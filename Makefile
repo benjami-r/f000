@@ -18,26 +18,27 @@ CC 		+= -g#debug
 AS 		:= $(CC) -x assembler-with-cpp
 LDSCRIPT	:= $(wildcard $(D_SRC)/*.ld)
 LD 		:= $(GCC) -nostdlib -T$(LDSCRIPT) -Wl,-Map=%,--cref# -nostdlib -static -Wl,-Map=%,--cref,--gc-sections#,--start-group -lc -lm -Wl,--end-group# -lnosys
-
+OBJCOPY	:= arm-none-eabi-objcopy
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS) | $(D_OUT) Makefile $(LDSCRIPT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = ld \n($^)"
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = ld ($^)"
 	@$(LD) -o $@ $^
+	@$(OBJCOPY) -O binary $@ $@.bin
 
 $(D_OUT)/%.o: $(D_SRC)/%.s Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as \n($<)"
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as ($<)"
 	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
-	-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
+	@-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
 
 $(D_OUT)/%.o: $(D_SRC)/%.S Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as \n($<)"
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as ($<)"
 	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
-	-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
+	@-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
 
 $(D_OUT)/%.o: $(D_SRC)/%.c Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = cc \n($<)"
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = cc ($<)"
 	@$(CC) -o $@ $<
 
 -include $(wildcard $(D_OUT)/*.D)#лепит чушь из as-компил-теки "tmp", исправляем sed-ами
@@ -48,7 +49,7 @@ $(D_OUT):
 clean:
 	@-rm -fR $(D_OUT)
 
-program:
+program: all
 	openocd -f board/st_nucleo_f0.cfg -c "program $(TARGET) verify reset exit"
 
 .PHONY: all clean program
