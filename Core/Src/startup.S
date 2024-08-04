@@ -19,12 +19,12 @@ Reset_Handler:
 	nop
 	nop
 
-DoGPIOA_On:					@ Включаем тактирование устройства GPIOA:
+DoGPIOA_On:	@ Включаем тактирование устройства GPIOA:
 	.MyOutDef _RCC_BASE, RCC_BASE
 	ldr r0, =(RCC_BASE + 0x14)		@ адрес AHBENR: RCC (0x40021000) + смещ. 0x14
 	ldr r1, [r0]					@ загружаем текущее значение AHBENR
 	.MyOutDef _RCC_AHBENR_GPIOAEN, RCC_AHBENR_GPIOAEN
-	ldr r2, =(RCC_AHBENR_GPIOAEN)	@ маска бита включения GPIOAEN  (0x1UL << 17U)
+	ldr r2, =(RCC_AHBENR_GPIOAEN)	@ маска бита включения GPIOAEN (0x1UL << 17U)
 	orrs r1, r2						@ накладываем маску на текущее значение AHBENR
 	str r1, [r0]					@ сохраняем новое значение AHBENR (GPIOA тактирован)
 DoPA5_Output_mode:
@@ -38,15 +38,18 @@ DoPA5_Output_mode:
 	orrs r1, r2						@ накладываем маску на текущее значение MODER
 	str r1, [r0]					@ сохраняем новое значение MODER (PA5 в General purpose output mode)
 									@ остальные конфигурационные трогать для наших целей вродь не надо
-DoPA5_setOn:
+
+@Если будем делать функцию конфигурации, можно предусмотреть параметры, способные принимать значения сразу для нескольких пинов - PA5 | PA6, ведь ей все равно сколько пинов настраивать за один проход. То же касается включения тактирования одного или нескольких GPIOx.
+
+DoPA5_set:
 	.MyOutDef _GPIO_BSRR_BS_5, GPIO_BSRR_BS_5
 	ldr r0, =(GPIOA_BASE + 0x18)	@ адрес BSRR: GPIOA (0x48000000) + смещ. 0x18
 	ldr r1, =(GPIO_BSRR_BS_5)		@ маска BS_5 (1 для 5-го пина -  5й бит, =0x20)
 	ldr r2, =(GPIO_BSRR_BR_5)		@ маска BR_5 (1 для 5-го пина - 21й бит, =0x200000)
-DoLD2_LightOn:
+DoLD2_setOn:
 	str r1, [r0]
 
-DoLD2_LightOff:
+DoLD2_setOff:
 @	str r2, [r0]
 
 @прерывание на кнопку (нажал - горит)
