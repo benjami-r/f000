@@ -18,6 +18,7 @@ Reset_Handler:
  	mov   r0, r0
 	nop
 	nop
+	ldr r0, =_version		@ My pastime
 
 DoGPIOA_On:	@ Включаем тактирование устройства GPIOA:
 	.MyOutDef _RCC_BASE, RCC_BASE
@@ -52,6 +53,8 @@ DoLD2_setOn:
 DoLD2_setOff:
 @	str r2, [r0]
 
+
+
 @прерывание на кнопку (нажал - горит)
 @прерывание на таймер (нажал - мигает)
 
@@ -63,6 +66,7 @@ DoLD2_setOff:
 @----------------------------------------
 LoopForever:
 	b LoopForever
+
 
 .size Reset_Handler, .-Reset_Handler
 

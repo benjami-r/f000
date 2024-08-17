@@ -1,4 +1,5 @@
 /* ******************************************************************************
+** STM32F072RBTX_My.ld
 ** My linker script for NUCLEO-F072RB Board (STM32F072RBTx, stm32f0 series)
 ** 		128KBytes FLASH
 ** 		16KBytes RAM
@@ -6,6 +7,8 @@
 ****************************************************************************** */
 
 ENTRY(Reset_Handler) /* Entry Point */
+
+_version = 0x00010001;
 
 _estack = ORIGIN(RAM) + LENGTH(RAM); /* Highest address of the user mode stack - end of "RAM" */
 
