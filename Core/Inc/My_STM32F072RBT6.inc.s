@@ -61,13 +61,13 @@ REGION4_ER2                     = 0x80000000        // 0.5Gb - External RAM-2
 REGION3_ER1                     = 0x60000000        // 0.5Gb - External RAM-1
 REGION2_PER                     = 0x40000000        // 0.5Gb - (Internal) Peripherals
 REGION1_RAM                     = 0x20000000        // 0.5Gb - (Internal) RAM
-REGION0_FLA                     = 0x00000000        // 0.5Gb - (Internal) FLASH
+REGION0_ROM                     = 0x00000000        // 0.5Gb - (Internal) FLASH
 
 // - - - - - - MEMORY-part has equivalent data with "STM32F072RBT6_map.ld"
 SRAM_ORIGIN                     = REGION1_RAM + 0x00000000
 SRAM_LENGTH                     = 16*KB
 SRAM_BOUND                      = SRAM_ORIGIN + SRAM_LENGTH
-FLASH_ORIGIN                    = REGION0_FLA + 0x08000000
+FLASH_ORIGIN                    = REGION0_ROM + 0x08000000
 FLASH_LENGTH                    = 128*KB
 FLASH_BOUND                     = FLASH_ORIGIN + FLASH_LENGTH
 
