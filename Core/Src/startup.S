@@ -4,7 +4,9 @@
 .thumb
 
 .include "My_common.mac.s"
+#include "My_core_cm0.h"
 #include "My_stm32f072xb.h"
+
 
 
 
@@ -48,10 +50,39 @@ DoPA5_set: @ Включаем/выключаем LD2 установкой/сбр
 	ldr r1, =(GPIO_BSRR_BS_5)		@ маска BS_5 (1 для 5-го пина -  5й бит, =0x20)
 	ldr r2, =(GPIO_BSRR_BR_5)		@ маска BR_5 (1 для 5-го пина - 21й бит, =0x200000)
 DoLD2_setOn:
-	str r1, [r0]
+@	str r1, [r0]
 
 DoLD2_setOff:
 @	str r2, [r0]
+
+@--------------
+	ldr r3, =(SysTick_BASE + 0x0c)			@ адрес STK_CALIB
+	ldr r5, [r3]
+
+	DELAY = 500000 @ ~0.5 sec
+	@ 1. Программируйте значение SYST_RVR:RELOAD.
+	ldr r3, =(SysTick_BASE + 0x04)			@ адрес STK_RVR
+@	ldr r5, =(SysTick_LOAD_RELOAD_Msk)		@ пользуем маску как макс. значение RELOAD (в "core_cm0.h" тоже так делают)
+	ldr r5, =(DELAY)
+	str r5, [r3]
+movs r5,0
+ldr r5, [r3]
+	@ 2. Очистите значение SYST_CVR:CURRENT (актом записи неважно чего в SYST_CVR).
+	ldr r3, =(SysTick_BASE + 0x08)			@ адрес STK_CVR
+	movs r5, 0
+	str r5, [r3]
+movs r5,0
+ldr r5, [r3]
+	@ 4. Программируйте регистр управления и состоянияS TK_CSR
+	ldr r3, =(SysTick_BASE + 0x00)			@ адрес STK_CSR
+	ldr r5, [r3]							@ берем текущее значение STK_CSR
+@	ldr r6, =(SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk) @ включаем тактирование, прерывания и запускаем счетчик
+ldr r6, =( SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk)
+	orrs r5, r6								@ накладываем на текущее значение STK_CSR
+	movs r4,0								@ флаг: лэд выключен
+	str r5, [r3]							@ сохраняем новое значение STK_CSR. Запустили.
+movs r5,0
+	ldr r5, [r3]
 
 
 
@@ -68,6 +99,8 @@ LoopForever:
 	b LoopForever
 
 
+
+
 .size Reset_Handler, .-Reset_Handler
 
 @= = = = = = = = = = = = = = = = = = = = = = = = = .section .text.Default_Handler
@@ -78,6 +111,23 @@ Default_Handler:
 Infinite_Loop:
 	b Infinite_Loop
 .size Default_Handler, .-Default_Handler
+
+.section .text.SysTick_Handler
+.type SysTick_Handler, %function
+.global SysTick_Handler
+SysTick_Handler:
+	cmp r4, 0	@ лэд выключен?
+	bne 1f		@ нет (включен) - идем выключать
+0:				@ да (выключен) - включаем:
+	str r1, [r0]
+	movs r4, 1	@ подняли флажок
+	b 2f
+1:				@ включен - выключаем:
+	str r2, [r0]
+	movs r4, 0	@ опустили флажок
+2:
+	BX LR
+.size SysTick_Handler, .-SysTick_Handler
 
 @= = = = = = = = = = = = = = = = = = = = = = = = = .section .isr_vector
 .section .isr_vector,"a",%progbits
@@ -140,8 +190,8 @@ g_pfnVectors:
 .thumb_set SVC_Handler,Default_Handler
 .weak      PendSV_Handler
 .thumb_set PendSV_Handler,Default_Handler
-.weak      SysTick_Handler
-.thumb_set SysTick_Handler,Default_Handler
+@ .weak      SysTick_Handler
+@ .thumb_set SysTick_Handler,Default_Handler
 .weak      WWDG_IRQHandler
 .thumb_set WWDG_IRQHandler,Default_Handler
 .weak      PVD_VDDIO2_IRQHandler
