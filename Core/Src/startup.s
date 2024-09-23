@@ -9,8 +9,6 @@
 
 
 
-
-
 @= = = = = = = = = = = = = = = = = = = = = = = = = .section .text.Reset_Handler
 .section .text.Reset_Handler
 .type Reset_Handler, %function
@@ -59,7 +57,7 @@ DoLD2_setOff:
 	ldr r3, =(SysTick_BASE + 0x0c)			@ адрес STK_CALIB
 	ldr r5, [r3]
 
-	DELAY = 500000 @ ~0.5 sec
+	DELAY = 500000 @ 500000=~0.5 sec
 	@ 1. Программируйте значение SYST_RVR:RELOAD.
 	ldr r3, =(SysTick_BASE + 0x04)			@ адрес STK_RVR
 @	ldr r5, =(SysTick_LOAD_RELOAD_Msk)		@ пользуем маску как макс. значение RELOAD (в "core_cm0.h" тоже так делают)

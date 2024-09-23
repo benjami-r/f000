@@ -1,55 +1,55 @@
 #make -j4 all
 #STM32F0
 
-DEF		:= STM32F072xB#separated by space
+SRC		= Core/Src
+INC		= Core/Inc#dirs separated by space
+BLD		= Debug
 
-D_SRC		:= Core/Src
-D_INC		:= Core/Inc#separated by space
-D_OUT		:= Debug
+DEF 	= DEBUG#RELEASE|DEBUG
+SUF		= .elf
+LDSCRIPT= $(wildcard $(SRC)/*.ld)
+FLG 	= -g#debug
 
-OBJECTS		:= $(patsubst $(D_SRC)/%.c,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.c)) \
-		   $(patsubst $(D_SRC)/%.s,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.s)) \
-		   $(patsubst $(D_SRC)/%.S,$(D_OUT)/%.o,$(wildcard $(D_SRC)/*.S))
+OBJ1	= $(wildcard $(SRC)/*.s $(SRC)/*.c)
+OBJ2	= $(notdir $(basename $(OBJ1)))
+OBJ		= $(addprefix $(BLD)/, $(addsuffix .o, $(OBJ2)))
 
-TARGET		:= $(D_OUT)/$(notdir $(basename $(CURDIR))).elf
-GCC		:= arm-none-eabi-gcc -std=gnu11 -mcpu=cortex-m0 -mthumb -Wall -Wextra# --specs=nano.specs -mfloat-abi=soft -ffunction-sections -fdata-sections -MMD
-CC 		:= $(GCC) $(addprefix -I,$(D_INC)) -c#$(addprefix -D,$(DEF)) -MMD
-CC 		+= -g#debug
-AS 		:= $(CC) -x assembler-with-cpp
-LDSCRIPT	:= $(wildcard $(D_SRC)/*.ld)
-LD 		:= $(GCC) -nostdlib -T$(LDSCRIPT) -Wl,-Map=%,--cref# -nostdlib -static -Wl,-Map=%,--cref,--gc-sections#,--start-group -lc -lm -Wl,--end-group# -lnosys
-OBJCOPY	:= arm-none-eabi-objcopy
+TGT		= $(BLD)/$(notdir $(basename $(CURDIR)))$(SUF)
 
-all: $(TARGET)
+CC 		= arm-none-eabi-gcc
+AS 		= arm-none-eabi-gcc
+LD 		= arm-none-eabi-gcc
 
-$(TARGET): $(OBJECTS) | $(D_OUT) Makefile $(LDSCRIPT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = ld ($^)"
-	@$(LD) -o $@ $^
-	@$(OBJCOPY) -O binary $@ $@.bin
+CPPFLAGS= -std=gnu11 -mcpu=cortex-m0 -mthumb -Wall -Wextra# --specs=nano.specs -mfloat-abi=soft -ffunction-sections -fdata-sections
+CFLAGS 	= $(CPPFLAGS) -c $(FLG) $(addprefix -I,$(INC)) $(addprefix -D,$(DEF)) -MMD
+ASFLAGS	= $(CFLAGS) -x assembler-with-cpp -Wa,-adlms=$(BLD)/$*.lst -Wa,--MD=$(BLD)/$*.as.d
+LDFLAGS	= -nostdlib -T$(LDSCRIPT) -Wl,-Map=%,--cref# -static -Wl,--gc-sections,--start-group -lc -lm -Wl,--end-group -lnosys $(CPPFLAGS)
 
-$(D_OUT)/%.o: $(D_SRC)/%.s Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as ($<)"
-	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
-	@-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
+.PHONY: all install clean
 
-$(D_OUT)/%.o: $(D_SRC)/%.S Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = as ($<)"
-	@$(AS) -Wa,-adlms=$(D_OUT)/$*.lst -Wa,--MD=$(D_OUT)/$*.D -o $@ $< #-adlms=$(D_OUT)/$*.lst
-	@-sed -i 's/\/tmp\/.*.s//' $(D_OUT)/$*.D
+all:$(TGT)
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = all"
 
-$(D_OUT)/%.o: $(D_SRC)/%.c Makefile | $(D_OUT)
-	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = cc ($<)"
-	@$(CC) -o $@ $<
+$(TGT): $(OBJ)
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = LD ($<)"
+	$(LD) $(LDFLAGS) -o $@ $^
 
--include $(wildcard $(D_OUT)/*.D)#лепит чушь из as-компил-теки "tmp", исправляем sed-ами
+$(BLD)/%.o: $(SRC)/%.s | $(BLD)
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = AS ($<)"
+	$(AS) $(ASFLAGS) -o $@ $<
+	@-sed -i 's/\/tmp\/.*.s//' $(BLD)/$*.as.d
 
-$(D_OUT):
+$(BLD)/%.o: $(SRC)/%.c | $(BLD)
+	@echo "= = = = = = = = = = = = = = = = = = = = = = = = = CC ($<)"
+	$(CC) $(CFLAGS) -o $@ $<
+
+$(BLD):
 	@mkdir -p $@
 
+-include $(wildcard $(BLD)/*.d)
+
 clean:
-	@-rm -fR $(D_OUT)
+	@-rm -fR $(BLD)
 
-program: all
-	openocd -f board/st_nucleo_f0.cfg -c "program $(TARGET) verify reset exit"
-
-.PHONY: all clean program
+install: all
+	openocd -f board/st_nucleo_f0.cfg -c "program $(TGT) verify reset exit"
